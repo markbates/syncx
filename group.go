@@ -1,6 +1,7 @@
 package syncx
 
 import (
+	"fmt"
 	"sync"
 )
 
@@ -12,6 +13,7 @@ type Group struct {
 	wg        sync.WaitGroup
 	eg        sync.WaitGroup
 	stop      sync.Once
+	err       error // first error
 	listeners map[int]chan error
 }
 
@@ -36,6 +38,17 @@ func (g *Group) Go(fn func() error) {
 	}()
 }
 
+// Errors returns a channel that will receive all of the errors
+// from the goroutines. This channel will be closed when the group
+// is done.
+// This method should be called **BEFORE** loading any Go functions.
+// otherwise you run the risk of missing errors.
+// 		wg := &Group{}
+// 		errs := wg.Errors()
+// 		wg.Go(func() error {
+// 			return nil
+// 		})
+// 		wg.Wait()
 func (g *Group) Errors() <-chan error {
 	if g == nil {
 		return nil
@@ -53,9 +66,13 @@ func (g *Group) Errors() <-chan error {
 	return ch
 }
 
-func (g *Group) Wait() {
+// Wait blocks until all of the goroutines have completed.
+// If any of the goroutines return an error, Wait will return
+// the first error reported.
+// To get all of the errors, use `Errors()`
+func (g *Group) Wait() error {
 	if g == nil {
-		return
+		return fmt.Errorf("group is nil")
 	}
 
 	defer func() {
@@ -75,6 +92,8 @@ func (g *Group) Wait() {
 	}()
 
 	g.wg.Wait()
+
+	return g.err
 }
 
 func (g *Group) report(err error) {
@@ -85,6 +104,12 @@ func (g *Group) report(err error) {
 	if err == nil {
 		return
 	}
+
+	g.mu.Lock()
+	if g.err == nil {
+		g.err = err
+	}
+	g.mu.Unlock()
 
 	g.mu.RLock()
 	defer g.mu.RUnlock()

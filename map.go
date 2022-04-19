@@ -8,10 +8,12 @@ import (
 )
 
 // NewMap returns a new Map from the given map.
+// If the map is nil, a new map is created.
 func NewMap[K constraints.Ordered, V any](m map[K]V) *Map[K, V] {
 	if m == nil {
 		m = map[K]V{}
 	}
+
 	return &Map[K, V]{
 		m: m,
 	}
@@ -22,20 +24,6 @@ type Map[K constraints.Ordered, V any] struct {
 	m    map[K]V
 	mu   sync.RWMutex
 	once sync.Once
-}
-
-func (m *Map[K, V]) init() {
-	if m == nil {
-		return
-	}
-
-	m.once.Do(func() {
-		m.mu.Lock()
-		defer m.mu.Unlock()
-		if m.m == nil {
-			m.m = make(map[K]V)
-		}
-	})
 }
 
 // Get returns the value for the given key.
@@ -133,7 +121,7 @@ func (m *Map[K, V]) Clear() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	m.m = make(map[K]V)
+	m.m = map[K]V{}
 }
 
 // Keys returns a sorted slice of the keys in the map.
@@ -157,4 +145,37 @@ func (m *Map[K, V]) Keys() []K {
 	})
 
 	return keys
+}
+
+// Clone returns a new Map with a copy of the underlying map.
+func (m *Map[K, V]) Clone() *Map[K, V] {
+	if m == nil {
+		return nil
+	}
+
+	nm := &Map[K, V]{
+		m: map[K]V{},
+	}
+
+	m.Range(func(k K, v V) bool {
+		nm.Set(k, v)
+		return true
+	})
+
+	return nm
+}
+
+func (m *Map[K, V]) init() {
+	if m == nil {
+		return
+	}
+
+	m.once.Do(func() {
+		m.mu.Lock()
+		defer m.mu.Unlock()
+
+		if m.m == nil {
+			m.m = map[K]V{}
+		}
+	})
 }
