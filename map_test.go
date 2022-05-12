@@ -1,68 +1,66 @@
 package syncx
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
 
 func Test_Map_Len(t *testing.T) {
 	t.Parallel()
+
+	r := require.New(t)
 
 	m := &Map[int, int]{}
 
 	exp := 0
 	act := m.Len()
 
-	if exp != act {
-		t.Fatalf("expected %v, got %v", exp, act)
-	}
+	r.Equal(exp, act)
 
-	m.Set(1, 1)
+	r.NoError(m.Set(1, 1))
 
 	exp = 1
 	act = m.Len()
 
-	if exp != act {
-		t.Fatalf("expected %v, got %v", exp, act)
-	}
+	r.Equal(exp, act)
 
 	ok := m.Delete(1)
-	if !ok {
-		t.Fatal("expected true")
-	}
+	r.True(ok)
 
 	exp = 0
 	act = m.Len()
 
-	if exp != act {
-		t.Fatalf("expected %v, got %v", exp, act)
-	}
-
+	r.Equal(exp, act)
 }
 
 func Test_Map_Keys(t *testing.T) {
 	t.Parallel()
 
+	r := require.New(t)
+
 	m := &Map[int, int]{}
 
-	m.Set(2, 200)
-	m.Set(1, 100)
-	m.Set(3, 300)
+	r.NoError(m.Set(2, 200))
+
+	r.NoError(m.Set(1, 100))
+
+	r.NoError(m.Set(3, 300))
 
 	exp := []int{1, 2, 3}
 
 	act := m.Keys()
 
-	if len(act) != len(exp) {
-		t.Fatalf("expected %v, got %v", exp, act)
-	}
-
+	r.Equal(len(exp), len(act))
 	for i := range exp {
-		if act[i] != exp[i] {
-			t.Fatalf("expected %v, got %v", exp, act)
-		}
+		r.Equal(exp[i], act[i])
 	}
 }
 
 func Test_NewMap(t *testing.T) {
 	t.Parallel()
+
+	r := require.New(t)
 
 	m := NewMap(map[int]string{
 		1: "one",
@@ -70,52 +68,42 @@ func Test_NewMap(t *testing.T) {
 		3: "three",
 	})
 
-	if m.Len() != 3 {
-		t.Fatalf("expected 3, got %v", m.Len())
-	}
+	r.Equal(3, m.Len())
 }
 
 func Test_Map_Get_Set_Delete(t *testing.T) {
 	t.Parallel()
+
+	r := require.New(t)
 
 	m := &Map[int, int]{}
 
 	exp := 42
 
 	_, ok := m.Get(1)
-	if ok {
-		t.Fatalf("expected false, got %v", ok)
-	}
+	r.False(ok)
 
-	m.Set(1, exp)
+	r.NoError(m.Set(1, exp))
 
 	act, ok := m.Get(1)
-	if !ok {
-		t.Fatalf("expected true, got %v", ok)
-	}
+	r.True(ok)
 
-	if act != exp {
-		t.Fatalf("expected %v, got %v", exp, act)
-	}
+	r.Equal(exp, act)
 
 	ok = m.Delete(1)
-	if !ok {
-		t.Fatal("expected true")
-	}
+	r.True(ok)
 
 	_, ok = m.Get(1)
-	if ok {
-		t.Fatalf("expected false, got %v", ok)
-	}
+	r.False(ok)
 
 	ok = m.Delete(1)
-	if ok {
-		t.Fatalf("expected false, got %v", ok)
-	}
+	r.False(ok)
 }
 
 func Test_Map_Range(t *testing.T) {
 	t.Parallel()
+
+	r := require.New(t)
 
 	exp := map[int]string{
 		1: "one",
@@ -126,9 +114,7 @@ func Test_Map_Range(t *testing.T) {
 	m := NewMap(exp)
 
 	m.Range(func(k int, v string) bool {
-		if exp[k] != v {
-			t.Fatalf("expected %v, got %v", exp[k], v)
-		}
+		r.Equal(exp[k], v)
 
 		return true
 	})
@@ -159,24 +145,20 @@ func Test_Map_Range_Break(t *testing.T) {
 func Test_Map_Clear(t *testing.T) {
 	t.Parallel()
 
+	r := require.New(t)
+
 	m := NewMap(map[int]string{
 		1: "one",
 	})
 
 	v, ok := m.Get(1)
-	if !ok {
-		t.Fatalf("expected true, got %v", ok)
-	}
+	r.True(ok)
 
-	if v != "one" {
-		t.Fatalf("expected one, got %v", v)
-	}
+	r.Equal("one", v)
 
 	m.Clear()
 
 	_, ok = m.Get(1)
-	if ok {
-		t.Fatalf("expected false, got %v", ok)
-	}
+	r.False(ok)
 
 }

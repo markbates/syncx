@@ -43,9 +43,9 @@ func (m *Map[K, V]) Get(k K) (V, bool) {
 }
 
 // Set sets the value for the given key.
-func (m *Map[K, V]) Set(k K, v V) {
+func (m *Map[K, V]) Set(k K, v V) error {
 	if m == nil {
-		return
+		return ErrNilMap
 	}
 
 	m.init()
@@ -54,6 +54,8 @@ func (m *Map[K, V]) Set(k K, v V) {
 	defer m.mu.Unlock()
 
 	m.m[k] = v
+
+	return nil
 }
 
 // Delete removes the item for the given key.
@@ -79,9 +81,9 @@ func (m *Map[K, V]) Delete(k K) bool {
 
 // Range calls f sequentially for each key and value present in the map.
 // Returning true from f will terminate the iteration.
-func (m *Map[K, V]) Range(f func(k K, v V) bool) {
+func (m *Map[K, V]) Range(f func(k K, v V) bool) bool {
 	if m == nil || f == nil {
-		return
+		return false
 	}
 
 	m.init()
@@ -91,9 +93,11 @@ func (m *Map[K, V]) Range(f func(k K, v V) bool) {
 
 	for k, v := range m.m {
 		if !f(k, v) {
-			break
+			return false
 		}
 	}
+
+	return true
 }
 
 // Len returns the number of items in the map.
@@ -148,21 +152,28 @@ func (m *Map[K, V]) Keys() []K {
 }
 
 // Clone returns a new Map with a copy of the underlying map.
-func (m *Map[K, V]) Clone() *Map[K, V] {
+func (m *Map[K, V]) Clone() (*Map[K, V], error) {
 	if m == nil {
-		return nil
+		return nil, ErrNilMap
 	}
 
 	nm := &Map[K, V]{
 		m: map[K]V{},
 	}
 
+	var err error
 	m.Range(func(k K, v V) bool {
-		nm.Set(k, v)
+		if err = nm.Set(k, v); err != nil {
+			return false
+		}
 		return true
 	})
 
-	return nm
+	if err != nil {
+		return nil, err
+	}
+
+	return nm, nil
 }
 
 func (m *Map[K, V]) init() {
