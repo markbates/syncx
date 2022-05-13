@@ -58,6 +58,24 @@ func (m *Map[K, V]) Set(k K, v V) error {
 	return nil
 }
 
+func (m *Map[K, V]) BulkSet(kvs map[K]V) error {
+	if m == nil {
+		return ErrNilMap
+	}
+
+	m.init()
+
+	m.mu.Lock()
+
+	for k, v := range kvs {
+		m.m[k] = v
+	}
+
+	m.mu.Unlock()
+
+	return nil
+}
+
 // Delete removes the item for the given key.
 // Returns true if an item was in the map and deleted.
 func (m *Map[K, V]) Delete(k K) bool {

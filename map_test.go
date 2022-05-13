@@ -162,3 +162,29 @@ func Test_Map_Clear(t *testing.T) {
 	r.False(ok)
 
 }
+
+func Test_Map_BulkSet(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	m := &Map[int, string]{}
+
+	bm := map[int]string{
+		1: "one",
+		2: "two",
+		3: "three",
+	}
+
+	err := m.BulkSet(bm)
+
+	r.NoError(err)
+
+	r.Equal(len(bm), m.Len())
+
+	for k, e := range bm {
+		a, ok := m.Get(k)
+		r.True(ok)
+		r.Equal(e, a)
+	}
+
+}
