@@ -194,6 +194,20 @@ func (m *Map[K, V]) Clone() (*Map[K, V], error) {
 	return nm, nil
 }
 
+func (m *Map[K, V]) Map() map[K]V {
+	mm := map[K]V{}
+	if m == nil {
+		return mm
+	}
+
+	m.Range(func(k K, v V) bool {
+		mm[k] = v
+		return true
+	})
+
+	return mm
+}
+
 func (m *Map[K, V]) init() {
 	if m == nil {
 		return
