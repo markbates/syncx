@@ -1,6 +1,8 @@
 package syncx
 
 import (
+	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -187,4 +189,32 @@ func Test_Map_BulkSet(t *testing.T) {
 		r.Equal(e, a)
 	}
 
+}
+
+func Test_Map_JSON(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+
+	m := Map[int, string]{}
+
+	bm := map[int]string{
+		1: "one",
+		2: "two",
+		3: "three",
+	}
+
+	err := m.BulkSet(bm)
+	r.NoError(err)
+
+	b, err := json.Marshal(&m)
+	r.NoError(err)
+
+	act := string(b)
+	act = strings.TrimSpace(act)
+
+	// fmt.Println(act)
+
+	exp := `{"1":"one","2":"two","3":"three"}`
+
+	r.Equal(exp, act)
 }

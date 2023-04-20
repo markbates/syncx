@@ -1,6 +1,7 @@
 package syncx
 
 import (
+	"encoding/json"
 	"sort"
 	"sync"
 
@@ -221,4 +222,26 @@ func (m *Map[K, V]) init() {
 			m.m = map[K]V{}
 		}
 	})
+}
+
+func (m *Map[K, V]) MarshalJSON() ([]byte, error) {
+	if m == nil {
+		return nil, ErrNilMap
+	}
+
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return json.Marshal(m.m)
+}
+
+func (m *Map[K, V]) UnmarshalJSON(b []byte) error {
+	if m == nil {
+		return ErrNilMap
+	}
+
+	m.m = map[K]V{}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return json.Unmarshal(b, &m.m)
 }
